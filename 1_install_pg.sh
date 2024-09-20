@@ -4,8 +4,8 @@
 # Configuration Variables
 # ===========================
 PG_VERSION=15                      # PostgreSQL version
-DB_NAME="db"                     # Database name
-DB_USER="dev"                   # Database user
+DB_NAME="devdb"                     # Database name
+DB_USER="devdbuser"                   # Database user
 DB_PASSWORD="devdbuser"           # Database user password
 ALLOW_REMOTE_CONNECTIONS=true      # Set to true to allow remote connections
 IP_ALLOWLIST="0.0.0.0/0"           # IP range allowed to connect (if remote connections are enabled)
@@ -65,7 +65,16 @@ if [ "$ALLOW_REMOTE_CONNECTIONS" = true ]; then
 
     # Add rule to pg_hba.conf to allow connections from the specified IP allowlist
     if [ -f "$PG_CONF_DIR/pg_hba.conf" ]; then
-        echo "host    all             all             $IP_ALLOWLIST            md5" | sudo tee -a "$PG_CONF_DIR/pg_hba.conf"
+        echo "host all all $IP_ALLOWLIST md5" | sudo tee -a "$PG_CONF_DIR/pg_hba.conf"
+    else
+        echo "PostgreSQL pg_hba.conf file not found."
+        exit 1
+    fi
+
+    # Replace 'peer' with 'md5' for local connections in pg_hba.conf
+    if [ -f "$PG_CONF_DIR/pg_hba.conf" ]; then
+        sudo sed -i "/^local\s\+all\s\+all\s\+peer/s/peer/md5/" /etc/postgresql/$PG_VERSION/main/pg_hba.conf
+        echo "Authentication method for local connections updated from 'peer' to 'md5' in pg_hba.conf."
     else
         echo "PostgreSQL pg_hba.conf file not found."
         exit 1
